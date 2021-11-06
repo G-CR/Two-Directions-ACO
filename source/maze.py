@@ -3,8 +3,8 @@ import math
 
 
 class maze:
-    maze_size = 10
-    stone_num = maze_size * 3
+    maze_size = 20
+    stone_num = maze_size * maze_size // 2
     stone_x = []
     stone_y = []
     dir_x = [0, 1, 1, 1, 0, -1, -1, -1]
@@ -33,7 +33,3 @@ class maze:
         self.maps = [[1 for y in range(self.maze_size + 1)] for x in range(self.maze_size + 1)]
         self.visited = [[0 for y in range(self.maze_size + 1)] for x in range(self.maze_size + 1)]
         self.random_stone()
-
-
-if __name__ == '__main__':
-    maze()
