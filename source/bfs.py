@@ -1,7 +1,5 @@
 import copy
 import random
-import time
-
 from maze import maze
 
 
@@ -13,12 +11,10 @@ class point:
 
 
 class bfs:
-
     def __init__(self):
         self.map = maze()
         st_ed = [[(1, 1), (self.map.maze_size, self.map.maze_size)], [(self.map.maze_size, self.map.maze_size), (1, 1)]]
         self.start, self.end = st_ed[random.randint(0, 1)]
-        self.start, self.end = st_ed[0]
 
     def solve(self):
         cur_point = point(self.start)
@@ -34,9 +30,7 @@ class bfs:
                 tx = x + self.map.dir_x[i]
                 ty = y + self.map.dir_y[i]
                 # print(self.start[0])
-                if ((self.start[0] <= tx <= self.end[0] and self.start[1] <= ty <= self.end[1]) \
-                    or (self.end[0] <= tx <= self.start[0] and self.end[1] <= ty <= self.start[1])) \
-                        and self.map.maps[tx][ty] and not self.map.visited[tx][ty]:
+                if self.map.maps[tx][ty] and not self.map.visited[tx][ty]:
                     self.map.visited[tx][ty] = 1
                     to_point = copy.deepcopy(now_point)
                     to_point.current_pos = (tx, ty)
