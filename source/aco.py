@@ -2,6 +2,7 @@ import copy
 import math
 import random
 import time
+from maze import maze
 
 
 class Stack(object):
@@ -35,28 +36,27 @@ class Point:
 
 
 # 地图类
-class Map:
-    p = [[]]
-    around = [[[]]]
-    row = 0  # 行数
-    col = 0  # 列数
-
-    def __init__(self, A, B):
-        self.p = [[0 for y in range(B)] for x in range(A)]  # 1表示为障碍方格，0表示该方格可通
-        self.around = [[[0 for z in range(4)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
+# class Map:
+#     p = [[]]
+#     around = [[[]]]
+#     row = 0  # 行数
+#     col = 0  # 列数
+#
+#     def __init__(self, A, B):
+#         self.p = [[0 for y in range(B)] for x in range(A)]  # 1表示为障碍方格，0表示该方格可通
+#         self.around = [[[0 for z in range(4)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
 
 
 # start起始点， end终止点
-def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
-    N1 = A
-    N2 = B
+def FindPath(map: maze, start: Point, end: Point):
+    N = map.maze_size
 
     M = 10  # 每一轮中蚂蚁的个数
     RcMax = 10  # 迭代次数
     IN = 1.0  # 信息素的初始量
 
-    add = [[0.0 for j in range(N2)] for i in range(N1)]  # 每一段的信息素增量数组
-    phe = [[0.0 for j in range(N2)] for i in range(N1)]  # 每一段路径上的信息素
+    add = [[0.0 for j in range(N)] for i in range(N)]  # 每一段的信息素增量数组
+    phe = [[0.0 for j in range(N)] for i in range(N)]  # 每一段路径上的信息素
     MAX = 0x7fffffff
 
     bestSolution = MAX  # 最短距离
@@ -69,17 +69,15 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
     Q = 10.0
 
     # 先给图的外围加上障碍
-    for i in range(map.col):
-        map.p[0][i] = map.p[map.row - 1][i] = 1
+    print(f"N = {N}")
 
-    for i in range(map.row):
-        map.p[i][0] = map.p[i][map.col - 1] = 1
+    for line in map.p:
+        print(line)
 
-    print(map.p)
     # 初始化图中每一个方格的四周访问表示位，0表示可访问
     # 初始化信息素数组
-    for i in range(N1):
-        for j in range(N2):
+    for i in range(N):
+        for j in range(N):
             phe[i][j] = IN
 
     # 用于方向选择的偏移量数组   按照顺时针的方向
@@ -104,7 +102,7 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
     # 每轮M只蚂蚁，每一轮结束后才进行全局信息素更新
     stackpath = [Stack() for i in range(M)]
     # 拷贝障碍地图
-    Ini_map = [Map(A, B) for i in range(M)]
+    Ini_map = [maze(N) for i in range(M)]
     # 记录每一只蚂蚁的当前位置
     Allposition = [Point() for i in range(M)]
 
@@ -126,9 +124,9 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
 
         # 开启M只蚂蚁循环
         for j in range(M):
-            print("第" + str(j) + "只蚂蚁")
+            # print("第" + str(j) + "只蚂蚁")
             while (Allposition[j].x) != (end.x) or (Allposition[j].y) != (end.y):
-                print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
+                # print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
                 # 选择下一步
                 psum = 0.0
                 for op in range(4):
@@ -202,8 +200,8 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
 
         # 计算每一只蚂蚁在其每一段路径上留下的信息素增量
         # 初始化信息素增量数组
-        for i in range(N1):
-            for j in range(N2):
+        for i in range(N):
+            for j in range(N):
                 add[i][j] = 0
 
         for i in range(M):
@@ -215,8 +213,8 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
                 stackpath[i].pop()
 
         # 更新信息素
-        for i in range(N1):
-            for j in range(N2):
+        for i in range(N):
+            for j in range(N):
                 phe[i][j] = phe[i][j] * rout + add[i][j]
                 # 为信息素设置一个下限值和上限值
                 if phe[i][j] < 0.0001:
@@ -229,21 +227,25 @@ def FindPath(map: Map, start: Point, end: Point, A: int, B: int):
     print("找到最优路径！")
     print("最短路线长度为： 共" + (str)(Beststackpath.size()) + "个方格！")
     while Beststackpath.empty() == False:
-        print("<" + (str)(Beststackpath.top().x) + "," + (str)(Beststackpath.top().y) + ">")
+        x, y = Beststackpath.top().x, Beststackpath.top().y
+        print("<" + (str)(x) + "," + (str)(y) + ">")
+        map.p[x][y] = 2
         Beststackpath.pop()
+    for line in map.p:
+        print(line)
     return True
 
 
 def start(maze_size):
-    map = Map(maze_size + 2, maze_size + 2)
+    map = maze(maze_size + 2)
     map.col, map.row = maze_size + 2, maze_size + 2
     start, end = Point(), Point()
     start.x, start.y = 1, 1
     end.x, end.y = maze_size, maze_size
-    return FindPath(map, start, end, map.col, map.row)
+    return FindPath(map, start, end)
 
 
 if __name__ == '__main__':
     nt = time.time()
     start(10)
-    print(f"aco cost {time.time()-nt}s")
+    print(f"aco cost {time.time() - nt}s")
