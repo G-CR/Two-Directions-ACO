@@ -37,12 +37,14 @@ class Point:
 
 # 地图类
 # class Map:
+#     p = [[]]
+#     around = [[[]]]
 #     row = 0  # 行数
 #     col = 0  # 列数
 #
 #     def __init__(self, A, B):
 #         self.p = [[0 for y in range(B)] for x in range(A)]  # 1表示为障碍方格，0表示该方格可通
-#         self.around = [[[0 for z in range(8)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
+#         self.around = [[[0 for z in range(4)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
 
 
 # start起始点， end终止点
@@ -67,14 +69,11 @@ def FindPath(map: maze, start: Point, end: Point):
     Q = 10.0
 
     # 先给图的外围加上障碍
-    for i in range(map.col):
-        print(i)
-        map.p[0][i] = map.p[map.row - 1][i] = 1
+    print(f"N = {N}")
 
-    for i in range(map.row):
-        map.p[i][0] = map.p[i][map.col - 1] = 1
+    for line in map.p:
+        print(line)
 
-    print(map.p)
     # 初始化图中每一个方格的四周访问表示位，0表示可访问
     # 初始化信息素数组
     for i in range(N):
@@ -101,11 +100,11 @@ def FindPath(map: maze, start: Point, end: Point):
     offset[7].y = 1  # 向右上
 
     # 每轮M只蚂蚁，每一轮结束后才进行全局信息素更新
-    stackpath = []
+    stackpath = [Stack() for i in range(M)]
     # 拷贝障碍地图
-    Ini_map = []
+    Ini_map = [maze(N) for i in range(M)]
     # 记录每一只蚂蚁的当前位置
-    Allposition = []
+    Allposition = [Point() for i in range(M)]
 
     s = 0
     while s < RcMax:  # 一共RcMax轮
@@ -125,12 +124,12 @@ def FindPath(map: maze, start: Point, end: Point):
 
         # 开启M只蚂蚁循环
         for j in range(M):
-            print("第" + str(j) + "只蚂蚁")
+            # print("第" + str(j) + "只蚂蚁")
             while (Allposition[j].x) != (end.x) or (Allposition[j].y) != (end.y):
-                print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
+                # print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
                 # 选择下一步
                 psum = 0.0
-                for op in range(8):
+                for op in range(4):
                     # 计算下一个可能的坐标
                     x = Allposition[j].x + offset[op].x
                     y = Allposition[j].y + offset[op].y
@@ -143,7 +142,7 @@ def FindPath(map: maze, start: Point, end: Point):
                     pro = 0.0
                     re = 0
                     x, y = 0, 0
-                    for re in range(8):
+                    for re in range(4):
                         # 计算下一个可能的坐标
                         x = Allposition[j].x + offset[re].x
                         y = Allposition[j].y + offset[re].y
@@ -180,15 +179,13 @@ def FindPath(map: maze, start: Point, end: Point):
                         if (Allposition[j].y - stackpath[j].top().y) == 1:
                             if (Allposition[j].x - stackpath[j].top().x) == 1:  # 向右下
                                 (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[1] = 1
-                            else: # 向右上
+                            else:  # 向右上
                                 (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[7] = 1
                         else:
-                            if (Allposition[j].x - stackpath[j].top().x) == 1: # 向左下
+                            if (Allposition[j].x - stackpath[j].top().x) == 1:  # 向左下
                                 (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[3] = 1
                             else:  # 向左上
                                 (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[5] = 1
-
-
 
                     Allposition[j].x = stackpath[j].top().x
                     Allposition[j].y = stackpath[j].top().y
@@ -230,14 +227,18 @@ def FindPath(map: maze, start: Point, end: Point):
     print("找到最优路径！")
     print("最短路线长度为： 共" + (str)(Beststackpath.size()) + "个方格！")
     while Beststackpath.empty() == False:
-        print("<" + (str)(Beststackpath.top().x) + "," + (str)(Beststackpath.top().y) + ">")
-        # dc.DrawRectangle((Beststackpath.top().x - 1) * w, (Beststackpath.top().y - 1) * h, w, h)
+        x, y = Beststackpath.top().x, Beststackpath.top().y
+        print("<" + (str)(x) + "," + (str)(y) + ">")
+        map.p[x][y] = 2
         Beststackpath.pop()
+    for line in map.p:
+        print(line)
     return True
 
 
 def start(maze_size):
-    map = maze(maze_size)
+    map = maze(maze_size + 2)
+    map.col, map.row = maze_size + 2, maze_size + 2
     start, end = Point(), Point()
     start.x, start.y = 1, 1
     end.x, end.y = maze_size, maze_size
@@ -246,5 +247,5 @@ def start(maze_size):
 
 if __name__ == '__main__':
     nt = time.time()
-    start(5)
-    print(f"run aco cost {time.time()-nt}")
+    start(10)
+    print(f"aco cost {time.time() - nt}s")
