@@ -21,7 +21,10 @@ class maze:
 
     def random_stone(self):
         for i in range(self.stone_num):
-            x, y = self.random_point()
+            while True:
+                x, y = self.random_point()
+                if (x, y) != (1, 1) and (x, y) != (self.maze_size-2, self.maze_size-2):
+                    break
             self.stone_x.append(x)
             self.stone_y.append(y)
             self.p[x][y] = 1
@@ -33,9 +36,8 @@ class maze:
         self.around = [[[0 for z in range(8)] for y in range(self.maze_size)] for x in range(self.maze_size)]
         self.visited = [[0 for y in range(self.maze_size + 2)] for x in range(self.maze_size + 2)]
         self.random_stone()
-        for i in range(self.maze_size + 1):
-            self.p[0][i - 1] = self.p[i - 1][0] = 1
-        for i in range(self.maze_size + 1):
-            self.p[self.maze_size - 1][i - 1] = self.p[i - 1][self.maze_size - 1] = 1
-
+        for i in range(self.maze_size):
+            self.p[0][i] = self.p[i][0] = 1
+        for i in range(self.maze_size):
+            self.p[self.maze_size-1][i] = self.p[i][self.maze_size-1] = 1
         self.start, self.end = (1, 1), (self.maze_size, self.maze_size)

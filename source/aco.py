@@ -35,16 +35,17 @@ class Point:
     y = 0
 
 
-# 地图类
-# class Map:
-#     p = [[]]
-#     around = [[[]]]
-#     row = 0  # 行数
-#     col = 0  # 列数
-#
-#     def __init__(self, A, B):
-#         self.p = [[0 for y in range(B)] for x in range(A)]  # 1表示为障碍方格，0表示该方格可通
-#         self.around = [[[0 for z in range(4)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
+class aco:
+    def __init__(self, n):
+        self.map = maze(n + 2)
+        self.map.print_map()
+        self.start, self.end = Point(), Point()
+        self.start.x, self.start.y = 1, 1
+        self.end.x, self.end.y = n, n
+
+
+
+aco(10)
 
 
 # start起始点， end终止点
@@ -228,7 +229,7 @@ def FindPath(map: maze, start: Point, end: Point):
     print("最短路线长度为： 共" + (str)(Beststackpath.size()) + "个方格！")
     while Beststackpath.empty() == False:
         x, y = Beststackpath.top().x, Beststackpath.top().y
-        print("<" + (str)(x) + "," + (str)(y) + ">")
+        print("<" + (str)(x) + "," + (str)(y) + ">", end=" " if Beststackpath.size() > 1 else "\n")
         map.p[x][y] = 2
         Beststackpath.pop()
     for line in map.p:
@@ -238,7 +239,6 @@ def FindPath(map: maze, start: Point, end: Point):
 
 def start(maze_size):
     map = maze(maze_size + 2)
-    map.col, map.row = maze_size + 2, maze_size + 2
     start, end = Point(), Point()
     start.x, start.y = 1, 1
     end.x, end.y = maze_size, maze_size
@@ -246,6 +246,7 @@ def start(maze_size):
 
 
 if __name__ == '__main__':
-    nt = time.time()
-    start(10)
-    print(f"aco cost {time.time() - nt}s")
+    pass
+    # nt = time.time()
+    # start(10)
+    # print(f"aco cost {time.time() - nt}s")
