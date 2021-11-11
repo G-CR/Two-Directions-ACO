@@ -3,8 +3,6 @@ import math
 
 
 class maze:
-    stone_x = []
-    stone_y = []
     dir_x = [0, 1, 1, 1, 0, -1, -1, -1]
     dir_y = [-1, -1, 0, 1, 1, 1, 0, -1]
     dis_straight = 1
@@ -29,7 +27,11 @@ class maze:
             self.stone_y.append(y)
             self.p[x][y] = 1
 
+        print(f"num_stone = {len(self.stone_x)}")
+
     def __init__(self, maze_size):
+        self.stone_x = []
+        self.stone_y = []
         self.maze_size = maze_size
         self.stone_num = maze_size * maze_size // 3
         self.p = [[0 for y in range(self.maze_size)] for x in range(self.maze_size)]
