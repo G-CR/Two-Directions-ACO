@@ -3,6 +3,7 @@ import math
 import random
 import time
 from maze import maze
+from bfs import bfs
 
 
 class Stack(object):
@@ -35,217 +36,211 @@ class Point:
     y = 0
 
 
-# 地图类
-# class Map:
-#     p = [[]]
-#     around = [[[]]]
-#     row = 0  # 行数
-#     col = 0  # 列数
-#
-#     def __init__(self, A, B):
-#         self.p = [[0 for y in range(B)] for x in range(A)]  # 1表示为障碍方格，0表示该方格可通
-#         self.around = [[[0 for z in range(4)] for y in range(B)] for x in range(A)]  # 记录每一个方格四周四个方法的可选标记
+class aco:
+    def __init__(self, n):
+        self.map = maze(n + 2)
+        # self.map.print_map()
+        self.start, self.end = Point(), Point()
+        self.start.x, self.start.y = 1, 1
+        self.end.x, self.end.y = n, n
 
+        self.N = self.map.maze_size
+        self.M = 10  # 每一轮中蚂蚁的个数
+        self.RcMax = 10  # 迭代次数
+        self.IN = 1.0  # 信息素的初始量
 
-# start起始点， end终止点
-def FindPath(map: maze, start: Point, end: Point):
-    N = map.maze_size
+        self.add = [[0.0 for j in range(self.N)] for i in range(self.N)]
+        self.phe = [[self.IN for j in range(self.N)] for i in range(self.N)]
+        self.MAX = 0x7fffffff
 
-    M = 10  # 每一轮中蚂蚁的个数
-    RcMax = 10  # 迭代次数
-    IN = 1.0  # 信息素的初始量
+        self.bestSolution = self.MAX  # 最短距离
+        self.Beststackpath = Stack()  # 最优路线
 
-    add = [[0.0 for j in range(N)] for i in range(N)]  # 每一段的信息素增量数组
-    phe = [[0.0 for j in range(N)] for i in range(N)]  # 每一段路径上的信息素
-    MAX = 0x7fffffff
+        # alphe信息素的影响因子，betra路线距离的影响因子，rout信息素的保持度，Q用于计算每只蚂蚁在其路迹留下的信息素增量
+        # 初始化变量参数和信息数组
+        self.alphe, self.betra, self.rout, self.Q = 1.0, 2.0, 0.5, 100.0
+        self.offset = [Point() for i in range(8)]
+        self.offset[0].x = 0
+        self.offset[0].y = 1  # 向右
+        self.offset[1].x = 1
+        self.offset[1].y = 1  # 向右下
+        self.offset[2].x = 1
+        self.offset[2].y = 0  # 向下
+        self.offset[3].x = 1
+        self.offset[3].y = -1  # 向左下
+        self.offset[4].x = 0
+        self.offset[4].y = -1  # 向左
+        self.offset[5].x = -1
+        self.offset[5].y = -1  # 向左上
+        self.offset[6].x = -1
+        self.offset[6].y = 0  # 向上
+        self.offset[7].x = -1
+        self.offset[7].y = 1  # 向右上
 
-    bestSolution = MAX  # 最短距离
-    Beststackpath = Stack()  # 最优路线
+        # 每轮M只蚂蚁，每一轮结束后才进行全局信息素更新
+        self.stackpath = [Stack() for i in range(self.M)]
+        # 拷贝障碍地图
+        self.Ini_map = [copy.deepcopy(self.map) for i in range(self.M)]
+        # 记录每一只蚂蚁的当前位置
+        self.Allposition = [Point() for i in range(self.M)]
 
-    # alphe信息素的影响因子，betra路线距离的影响因子，rout信息素的保持度，Q用于计算每只蚂蚁在其路迹留下的信息素增量
-    # 初始化变量参数和信息数组
-    alphe, betra = 2.0, 2.0
-    rout = 0.7
-    Q = 10.0
+        self.bfs_path = bfs(self.map).solve()
 
-    # 先给图的外围加上障碍
-    print(f"N = {N}")
-
-    for line in map.p:
-        print(line)
-
-    # 初始化图中每一个方格的四周访问表示位，0表示可访问
-    # 初始化信息素数组
-    for i in range(N):
-        for j in range(N):
-            phe[i][j] = IN
-
-    # 用于方向选择的偏移量数组   按照顺时针的方向
-    offset = [Point() for i in range(8)]
-    offset[0].x = 0
-    offset[0].y = 1  # 向右
-    offset[1].x = 1
-    offset[1].y = 1  # 向右下
-    offset[2].x = 1
-    offset[2].y = 0  # 向下
-    offset[3].x = 1
-    offset[3].y = -1  # 向左下
-    offset[4].x = 0
-    offset[4].y = -1  # 向左
-    offset[5].x = -1
-    offset[5].y = -1  # 向左上
-    offset[6].x = -1
-    offset[6].y = 0  # 向上
-    offset[7].x = -1
-    offset[7].y = 1  # 向右上
-
-    # 每轮M只蚂蚁，每一轮结束后才进行全局信息素更新
-    stackpath = [Stack() for i in range(M)]
-    # 拷贝障碍地图
-    Ini_map = [maze(N) for i in range(M)]
-    # 记录每一只蚂蚁的当前位置
-    Allposition = [Point() for i in range(M)]
-
-    s = 0
-    while s < RcMax:  # 一共RcMax轮
+    def search(self):
         # 先清空每一只蚂蚁的路线存储栈
-        for i in range(M):
-            while stackpath[i].empty() is False:
-                stackpath[i].pop()
+        for i in range(self.M):
+            while not self.stackpath[i].empty():
+                self.stackpath[i].pop()
 
-        for i in range(M):
-            Ini_map[i] = copy.deepcopy(map)
+        for i in range(self.M):
+            self.Ini_map[i] = copy.deepcopy(self.map)
             # 将起点初始化为障碍点
-            Ini_map[i].p[start.x][start.y] = 1
+            self.Ini_map[i].p[self.start.x][self.start.y] = 1
             # 起点入栈
-            stackpath[i].push(start)
+            self.stackpath[i].push(self.start)
             # 初始化每一只蚂蚁的当前位置
-            Allposition[i] = copy.deepcopy(start)
+            self.Allposition[i] = copy.deepcopy(self.start)
 
         # 开启M只蚂蚁循环
-        for j in range(M):
+        for j in range(self.M):
             # print("第" + str(j) + "只蚂蚁")
-            while (Allposition[j].x) != (end.x) or (Allposition[j].y) != (end.y):
+            while (self.Allposition[j].x) != (self.end.x) or (self.Allposition[j].y) != (self.end.y):
                 # print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
                 # 选择下一步
                 psum = 0.0
                 for op in range(4):
                     # 计算下一个可能的坐标
-                    x = Allposition[j].x + offset[op].x
-                    y = Allposition[j].y + offset[op].y
-                    if (Ini_map[j].around[Allposition[j].x][Allposition[j].y])[op] == 0 and Ini_map[j].p[x][y] != 1:
-                        psum += math.pow(phe[x][y], alphe) * math.pow((10.0 / stackpath[j].size()), betra)
+                    x = self.Allposition[j].x + self.offset[op].x
+                    y = self.Allposition[j].y + self.offset[op].y
+                    if (self.Ini_map[j].around[self.Allposition[j].x][self.Allposition[j].y])[op] == 0 and \
+                            self.Ini_map[j].p[x][y] != 1:
+                        psum += math.pow(self.phe[x][y], self.alphe) * math.pow((10.0 / self.stackpath[j].size()),
+                                                                                self.betra)
                 # 判断是否有选择
                 # 如找到了下一点
                 if psum != 0.0:
                     drand = random.uniform(0, 1)
                     pro = 0.0
-                    re = 0
                     x, y = 0, 0
                     for re in range(4):
                         # 计算下一个可能的坐标
-                        x = Allposition[j].x + offset[re].x
-                        y = Allposition[j].y + offset[re].y
-                        if (Ini_map[j].around[Allposition[j].x][Allposition[j].y])[re] == 0 and Ini_map[j].p[x][y] != 1:
-                            pro += (pow(phe[x][y], alphe) * pow((10.0 / stackpath[j].size()), betra)) / psum
+                        x = self.Allposition[j].x + self.offset[re].x
+                        y = self.Allposition[j].y + self.offset[re].y
+                        if (self.Ini_map[j].around[self.Allposition[j].x][self.Allposition[j].y])[re] == 0 and \
+                                self.Ini_map[j].p[x][y] != 1:
+                            pro += (pow(self.phe[x][y], self.alphe) * pow((10.0 / self.stackpath[j].size()),
+                                                                          self.betra)) / psum
                             if pro >= drand:
                                 break
                     # 入栈
-                    Allposition[j].x = x
-                    Allposition[j].y = y
-                    temp_Point = copy.deepcopy(Allposition[j])
-                    stackpath[j].push(temp_Point)
+                    self.Allposition[j].x = x
+                    self.Allposition[j].y = y
+                    temp_Point = copy.deepcopy(self.Allposition[j])
+                    self.stackpath[j].push(temp_Point)
                     # 设置障碍
-                    Ini_map[j].p[Allposition[j].x][Allposition[j].y] = 1
+                    self.Ini_map[j].p[self.Allposition[j].x][self.Allposition[j].y] = 1
                 else:  # 没找到了下一点
                     # 向后退一步，出栈
-                    p = stackpath[j].pop()
+                    p = self.stackpath[j].pop()
                     # 消除入栈时设置的障碍
-                    Ini_map[j].p[Allposition[j].x][Allposition[j].y] = 0
-                    if stackpath[j].empty() == True:
+                    self.Ini_map[j].p[self.Allposition[j].x][self.Allposition[j].y] = 0
+                    if self.stackpath[j].empty() == True:
                         return False
                     # 设置回溯后的Allposition
-                    if Allposition[j].x == stackpath[j].top().x:
-                        if (Allposition[j].y - stackpath[j].top().y) == 1:  # 向右
-                            (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[0] = 1  # 标记该方向已访问
-                        if (Allposition[j].y - stackpath[j].top().y) == -1:  # 向左
-                            (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[4] = 1  # 标记该方向已访问
-                    elif Allposition[j].y == stackpath[j].top().y:
-                        if (Allposition[j].x - stackpath[j].top().x) == 1:  # 向下
-                            (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[2] = 1  # 标记该方向已访问
-                        if (Allposition[j].x - stackpath[j].top().x) == -1:  # 向上
-                            (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[6] = 1  # 标记该方向已访问
+                    if self.Allposition[j].x == self.stackpath[j].top().x:
+                        if (self.Allposition[j].y - self.stackpath[j].top().y) == 1:  # 向右
+                            (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[
+                                0] = 1  # 标记该方向已访问
+                        if (self.Allposition[j].y - self.stackpath[j].top().y) == -1:  # 向左
+                            (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[
+                                4] = 1  # 标记该方向已访问
+                    elif self.Allposition[j].y == self.stackpath[j].top().y:
+                        if (self.Allposition[j].x - self.stackpath[j].top().x) == 1:  # 向下
+                            (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[
+                                2] = 1  # 标记该方向已访问
+                        if (self.Allposition[j].x - self.stackpath[j].top().x) == -1:  # 向上
+                            (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[
+                                6] = 1  # 标记该方向已访问
                     else:
-                        if (Allposition[j].y - stackpath[j].top().y) == 1:
-                            if (Allposition[j].x - stackpath[j].top().x) == 1:  # 向右下
-                                (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[1] = 1
+                        if (self.Allposition[j].y - self.stackpath[j].top().y) == 1:
+                            if (self.Allposition[j].x - self.stackpath[j].top().x) == 1:  # 向右下
+                                (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[1] = 1
                             else:  # 向右上
-                                (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[7] = 1
+                                (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[7] = 1
                         else:
-                            if (Allposition[j].x - stackpath[j].top().x) == 1:  # 向左下
-                                (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[3] = 1
+                            if (self.Allposition[j].x - self.stackpath[j].top().x) == 1:  # 向左下
+                                (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[3] = 1
                             else:  # 向左上
-                                (Ini_map[j].around[stackpath[j].top().x][stackpath[j].top().y])[5] = 1
+                                (self.Ini_map[j].around[self.stackpath[j].top().x][self.stackpath[j].top().y])[5] = 1
 
-                    Allposition[j].x = stackpath[j].top().x
-                    Allposition[j].y = stackpath[j].top().y
+                    self.Allposition[j].x = self.stackpath[j].top().x
+                    self.Allposition[j].y = self.stackpath[j].top().y
         # 保存最优路线
-        solution = 0
-        for i in range(M):
+        for i in range(self.M):
             solution = 0
-            solution = stackpath[i].size()
-            if solution < bestSolution:
-                Beststackpath = copy.deepcopy(stackpath[i])
-                bestSolution = solution
+            tmp_path = copy.deepcopy(self.stackpath[i])
+            top = tmp_path.top()
+            tmp_path.pop()
+            while not tmp_path.empty():
+                if abs(top.x-tmp_path.top().x) + abs(top.y-tmp_path.top().y) == 2:
+                    solution += math.sqrt(2)
+                else:
+                    solution += 1
+                top = tmp_path.top()
+                tmp_path.pop()
+
+            if solution < self.bestSolution:
+                self.Beststackpath = copy.deepcopy(self.stackpath[i])
+                self.bestSolution = solution
 
         # 计算每一只蚂蚁在其每一段路径上留下的信息素增量
         # 初始化信息素增量数组
-        for i in range(N):
-            for j in range(N):
-                add[i][j] = 0
+        for i in range(self.N):
+            for j in range(self.N):
+                self.add[i][j] = 0
 
-        for i in range(M):
+        for i in range(self.M):
             # 先算出每只蚂蚁的路线的总距离solu
-            solu = stackpath[i].size()
-            d = Q / solu
-            while stackpath[i].empty() == False:
-                add[stackpath[i].top().x][stackpath[i].top().y] += d
-                stackpath[i].pop()
+            solu = self.stackpath[i].size()
+            d = self.Q / solu
+            while self.stackpath[i].empty() == False:
+                self.add[self.stackpath[i].top().x][self.stackpath[i].top().y] += d
+                self.stackpath[i].pop()
 
-        # 更新信息素
-        for i in range(N):
-            for j in range(N):
-                phe[i][j] = phe[i][j] * rout + add[i][j]
+    def update_phe(self):  # 更新信息素
+        for i in range(self.N):
+            for j in range(self.N):
+                self.phe[i][j] = self.phe[i][j] * self.rout + self.add[i][j]
                 # 为信息素设置一个下限值和上限值
-                if phe[i][j] < 0.0001:
-                    phe[i][j] = 0.0001
-                if phe[i][j] > 20:
-                    phe[i][j] = 20
+                if self.phe[i][j] < 0.0001:
+                    self.phe[i][j] = 0.0001
+                if self.phe[i][j] > 20:
+                    self.phe[i][j] = 20
+
+
+ACO = aco(10)
+
+
+# start起始点， end终止点
+def FindPath():
+    RcMax = 10  # 迭代次数
+    s = 0
+    while s < RcMax:  # 一共RcMax轮
+        ACO.search()
+        ACO.update_phe()
+
         s += 1
 
     # 找到路径，并输出stackpath
     print("找到最优路径！")
-    print("最短路线长度为： 共" + (str)(Beststackpath.size()) + "个方格！")
-    while Beststackpath.empty() == False:
-        x, y = Beststackpath.top().x, Beststackpath.top().y
-        print("<" + (str)(x) + "," + (str)(y) + ">")
-        map.p[x][y] = 2
-        Beststackpath.pop()
-    for line in map.p:
-        print(line)
-    return True
-
-
-def start(maze_size):
-    map = maze(maze_size + 2)
-    map.col, map.row = maze_size + 2, maze_size + 2
-    start, end = Point(), Point()
-    start.x, start.y = 1, 1
-    end.x, end.y = maze_size, maze_size
-    return FindPath(map, start, end)
+    print("最短路线长度为： 共" + (str)(ACO.Beststackpath.size()) + "个方格！")
+    while ACO.Beststackpath.empty() == False:
+        x, y = ACO.Beststackpath.top().x, ACO.Beststackpath.top().y
+        print("<" + (str)(x) + "," + (str)(y) + ">", end=" " if ACO.Beststackpath.size() > 1 else "\n")
+        ACO.Beststackpath.pop()
 
 
 if __name__ == '__main__':
     nt = time.time()
-    start(10)
+    FindPath()
     print(f"aco cost {time.time() - nt}s")

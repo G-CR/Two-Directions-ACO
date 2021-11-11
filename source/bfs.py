@@ -1,9 +1,5 @@
 import copy
-import random
 import time
-
-from maze import maze
-
 
 class point:
     def __init__(self, start):
@@ -13,18 +9,16 @@ class point:
 
 
 class bfs:
-    def __init__(self, maze_size):
-        self.map = maze(maze_size+2)
+    def __init__(self, maps):
+        self.map = maps
         self.map.print_map()
-        st_ed = [[(1, 1), (self.map.maze_size-2, self.map.maze_size-2)], [(self.map.maze_size-2, self.map.maze_size-2), (1, 1)]]
-        self.start, self.end = st_ed[random.randint(0, 1)]
+        self.start, self.end = (1, 1), (self.map.maze_size-2, self.map.maze_size-2)
 
     def solve(self):
         cur_point = point(self.start)
         self.map.visited[self.start[0]][self.start[1]] = 1
         all_point = [cur_point]
 
-        found = False
         while len(all_point):
             now_point = all_point[0]
             all_point.pop(0)
@@ -42,15 +36,15 @@ class bfs:
                     all_point.append(to_point)
 
                     if to_point.current_pos == self.end:
-                        found = True
-                        print("shortest distance = {}\npath = {}".format(to_point.tot_dis, to_point.path))
-                        for p in to_point.path:
-                            (x, y) = p
-                            self.map.p[x][y] = 2
-                        self.map.print_map()
-                        break
-            if found:
-                break
+                        return to_point.path
+            #             print("shortest distance = {}\npath = {}".format(to_point.tot_dis, to_point.path))
+            #             for p in to_point.path:
+            #                 (x, y) = p
+            #                 self.map.p[x][y] = 2
+            #             self.map.print_map()
+            #             break
+            # if found:
+            #     break
 
 
 if __name__ == '__main__':
