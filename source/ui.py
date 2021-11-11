@@ -79,7 +79,7 @@ class ui:
                 outline="#ffffff",
                 tags="tmp_path"
             )
-        time.sleep(0.02)
+        # time.sleep(0.02)
 
     def clear(self):
         for item in self.canvas.find_all():
