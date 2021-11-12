@@ -84,7 +84,7 @@ class aco:
         # 记录每一只蚂蚁的当前位置
         self.Allposition = [Point() for i in range(self.M)]
 
-        self.bfs_path = bfs(self.map).solve()
+        [self.bfs_path, self.bfs_dis] = bfs(self.map).solve()
 
     def search(self):
         # 先清空每一只蚂蚁的路线存储栈

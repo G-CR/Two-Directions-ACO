@@ -26,7 +26,6 @@ class bfs:
             for i in range(len(self.map.dir_x)):
                 tx = x + self.map.dir_x[i]
                 ty = y + self.map.dir_y[i]
-                # print(self.start[0])
                 if self.map.p[tx][ty] == 0 and not self.map.visited[tx][ty]:
                     self.map.visited[tx][ty] = 1
                     to_point = copy.deepcopy(now_point)
@@ -36,15 +35,7 @@ class bfs:
                     all_point.append(to_point)
 
                     if to_point.current_pos == self.end:
-                        return to_point.path
-            #             print("shortest distance = {}\npath = {}".format(to_point.tot_dis, to_point.path))
-            #             for p in to_point.path:
-            #                 (x, y) = p
-            #                 self.map.p[x][y] = 2
-            #             self.map.print_map()
-            #             break
-            # if found:
-            #     break
+                        return [to_point.path, to_point.tot_dis]
 
 
 if __name__ == '__main__':

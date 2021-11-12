@@ -103,13 +103,17 @@ class ui:
         self.__running = True
         self.__lock.release()
 
+        print(f"BFS算法得到最优路径为: {self.aco.bfs_dis}")
         count = 1
+        best = 9999999999
         while self.__running:
             self.aco.search()
             self.__update_pheromone_gragh()
             self.line()
             self.canvas.update()
-            print(f"第{count}次探索，当前最佳路径长度: {self.aco.bestSolution}")
+            if best > self.aco.bestSolution:
+                best = self.aco.bestSolution
+                print(f"第{count}次探索，当前最佳路径长度: {best}")
             count += 1
 
     def __update_pheromone_gragh(self):
