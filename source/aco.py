@@ -58,7 +58,7 @@ class aco:
 
         # alphe信息素的影响因子，betra路线距离的影响因子，rout信息素的保持度，Q用于计算每只蚂蚁在其路迹留下的信息素增量
         # 初始化变量参数和信息数组
-        self.alphe, self.betra, self.rout, self.Q = 1.0, 2.0, 0.5, 100.0
+        self.alphe, self.betra, self.rout, self.Q = 0.0001, 14.0, 0.35, 10.0
         self.offset = [Point() for i in range(8)]
         self.offset[0].x = 0
         self.offset[0].y = 1  # 向右
@@ -84,7 +84,7 @@ class aco:
         # 记录每一只蚂蚁的当前位置
         self.Allposition = [Point() for i in range(self.M)]
 
-        self.bfs_path = bfs(self.map).solve()
+        [self.bfs_path, self.bfs_dis] = bfs(self.map).solve()
 
     def search(self):
         # 先清空每一只蚂蚁的路线存储栈
@@ -216,31 +216,3 @@ class aco:
                     self.phe[i][j] = 0.0001
                 if self.phe[i][j] > 20:
                     self.phe[i][j] = 20
-
-
-ACO = aco(10)
-
-
-# start起始点， end终止点
-def FindPath():
-    RcMax = 10  # 迭代次数
-    s = 0
-    while s < RcMax:  # 一共RcMax轮
-        ACO.search()
-        ACO.update_phe()
-
-        s += 1
-
-    # 找到路径，并输出stackpath
-    print("找到最优路径！")
-    print("最短路线长度为： 共" + (str)(ACO.Beststackpath.size()) + "个方格！")
-    while ACO.Beststackpath.empty() == False:
-        x, y = ACO.Beststackpath.top().x, ACO.Beststackpath.top().y
-        print("<" + (str)(x) + "," + (str)(y) + ">", end=" " if ACO.Beststackpath.size() > 1 else "\n")
-        ACO.Beststackpath.pop()
-
-
-if __name__ == '__main__':
-    nt = time.time()
-    FindPath()
-    print(f"aco cost {time.time() - nt}s")

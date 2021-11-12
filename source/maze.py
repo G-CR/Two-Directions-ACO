@@ -8,9 +8,6 @@ class maze:
     dis_straight = 1
     dis_slope = math.sqrt(2)
 
-    def print_map(self):
-        for i in self.p:
-            print(i)
 
     def random_point(self):
         x = random.randint(1, self.maze_size - 1)
@@ -27,7 +24,7 @@ class maze:
             self.stone_y.append(y)
             self.p[x][y] = 1
 
-        print(f"num_stone = {len(self.stone_x)}")
+        # print(f"num_stone = {len(self.stone_x)}")
 
     def __init__(self, maze_size):
         self.stone_x = []
