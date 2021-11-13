@@ -10,8 +10,7 @@ class point:
 
 class bfs:
     def __init__(self, maps):
-        self.map = maps
-        self.map.print_map()
+        self.map = copy.deepcopy(maps)
         self.start, self.end = (1, 1), (self.map.maze_size-2, self.map.maze_size-2)
 
     def solve(self):
@@ -33,12 +32,5 @@ class bfs:
                     to_point.path.append((tx, ty))
                     to_point.tot_dis += self.map.dis_straight if tx == x or ty == y else self.map.dis_slope
                     all_point.append(to_point)
-
                     if to_point.current_pos == self.end:
                         return [to_point.path, to_point.tot_dis]
-
-
-if __name__ == '__main__':
-    nt = time.time()
-    bfs(10).solve()
-    print(f"bfs cost {time.time()-nt}")
