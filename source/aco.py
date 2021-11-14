@@ -16,6 +16,9 @@ class Stack(object):
     def pop(self):  # 出栈
         return self.stack.pop()
 
+    def pop_b(self):
+        return self.stack.pop(0)
+
     def empty(self):  # 如果栈为空
         if len(self.stack) == 0:
             return True
@@ -26,27 +29,29 @@ class Stack(object):
         # 取出目前stack中最新的元素
         return self.stack[-1]
 
+    def bottum(self):
+        return self.stack[0]
+
     def size(self):
         return len(self.stack)
 
 
 # 坐标类
 class Point:
-    x = 0
-    y = 0
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
 
 
 class aco:
-    def __init__(self, n):
-        self.map = maze(n + 2)
-        # self.map.print_map()
+    def __init__(self, maps, sx, sy, ex, ey):
+        self.map = copy.deepcopy(maps)
         self.start, self.end = Point(), Point()
-        self.start.x, self.start.y = 1, 1
-        self.end.x, self.end.y = n, n
+        self.start.x, self.start.y = sx, sy
+        self.end.x, self.end.y = ex, ey
 
         self.N = self.map.maze_size
         self.M = 10  # 每一轮中蚂蚁的个数
-        self.RcMax = 10  # 迭代次数
         self.IN = 1.0  # 信息素的初始量
 
         self.add = [[0.0 for j in range(self.N)] for i in range(self.N)]
@@ -58,7 +63,7 @@ class aco:
 
         # alphe信息素的影响因子，betra路线距离的影响因子，rout信息素的保持度，Q用于计算每只蚂蚁在其路迹留下的信息素增量
         # 初始化变量参数和信息数组
-        self.alphe, self.betra, self.rout, self.Q = 0.0001, 14.0, 0.35, 10.0
+        self.alphe, self.betra, self.rout, self.Q = 2.0, 2.0, 0.3, 20.0
         self.offset = [Point() for i in range(8)]
         self.offset[0].x = 0
         self.offset[0].y = 1  # 向右
@@ -83,16 +88,13 @@ class aco:
         self.Ini_map = [copy.deepcopy(self.map) for i in range(self.M)]
         # 记录每一只蚂蚁的当前位置
         self.Allposition = [Point() for i in range(self.M)]
-
         [self.bfs_path, self.bfs_dis] = bfs(self.map).solve()
 
-    def search(self):
-        # 先清空每一只蚂蚁的路线存储栈
+    def init(self):
         for i in range(self.M):
+            # 先清空每一只蚂蚁的路线存储栈
             while not self.stackpath[i].empty():
                 self.stackpath[i].pop()
-
-        for i in range(self.M):
             self.Ini_map[i] = copy.deepcopy(self.map)
             # 将起点初始化为障碍点
             self.Ini_map[i].p[self.start.x][self.start.y] = 1
@@ -101,14 +103,34 @@ class aco:
             # 初始化每一只蚂蚁的当前位置
             self.Allposition[i] = copy.deepcopy(self.start)
 
+        # 初始化信息素增量数组
+        for i in range(self.N):
+            for j in range(self.N):
+                self.add[i][j] = 0
+
+    def calc_total_dis(self, stack_path):
+        solution = 0
+        tmp_path = copy.deepcopy(stack_path)
+        top = tmp_path.top()
+        tmp_path.pop()
+        while not tmp_path.empty():
+            if abs(top.x - tmp_path.top().x) + abs(top.y - tmp_path.top().y) == 2:
+                solution += math.sqrt(2)
+            else:
+                solution += 1
+            top = tmp_path.top()
+            tmp_path.pop()
+
+        return solution
+
+    def search(self):
+        self.init()
         # 开启M只蚂蚁循环
         for j in range(self.M):
-            # print("第" + str(j) + "只蚂蚁")
-            while (self.Allposition[j].x) != (self.end.x) or (self.Allposition[j].y) != (self.end.y):
-                # print("<" + (str)(Allposition[j].x) + "," + (str)(Allposition[j].y) + ">")
+            while self.Allposition[j].x != self.end.x or self.Allposition[j].y != self.end.y:
                 # 选择下一步
                 psum = 0.0
-                for op in range(4):
+                for op in range(8):
                     # 计算下一个可能的坐标
                     x = self.Allposition[j].x + self.offset[op].x
                     y = self.Allposition[j].y + self.offset[op].y
@@ -122,7 +144,7 @@ class aco:
                     drand = random.uniform(0, 1)
                     pro = 0.0
                     x, y = 0, 0
-                    for re in range(4):
+                    for re in range(8):
                         # 计算下一个可能的坐标
                         x = self.Allposition[j].x + self.offset[re].x
                         y = self.Allposition[j].y + self.offset[re].y
@@ -175,39 +197,24 @@ class aco:
 
                     self.Allposition[j].x = self.stackpath[j].top().x
                     self.Allposition[j].y = self.stackpath[j].top().y
+
         # 保存最优路线
         for i in range(self.M):
-            solution = 0
-            tmp_path = copy.deepcopy(self.stackpath[i])
-            top = tmp_path.top()
-            tmp_path.pop()
-            while not tmp_path.empty():
-                if abs(top.x-tmp_path.top().x) + abs(top.y-tmp_path.top().y) == 2:
-                    solution += math.sqrt(2)
-                else:
-                    solution += 1
-                top = tmp_path.top()
-                tmp_path.pop()
-
+            solution = self.calc_total_dis(self.stackpath[i])
             if solution < self.bestSolution:
                 self.Beststackpath = copy.deepcopy(self.stackpath[i])
                 self.bestSolution = solution
 
+    def update_phe(self):  # 更新信息素
         # 计算每一只蚂蚁在其每一段路径上留下的信息素增量
-        # 初始化信息素增量数组
-        for i in range(self.N):
-            for j in range(self.N):
-                self.add[i][j] = 0
-
         for i in range(self.M):
             # 先算出每只蚂蚁的路线的总距离solu
-            solu = self.stackpath[i].size()
+            solu = self.calc_total_dis(self.stackpath[i])
             d = self.Q / solu
-            while self.stackpath[i].empty() == False:
+            while not self.stackpath[i].empty():
                 self.add[self.stackpath[i].top().x][self.stackpath[i].top().y] += d
                 self.stackpath[i].pop()
 
-    def update_phe(self):  # 更新信息素
         for i in range(self.N):
             for j in range(self.N):
                 self.phe[i][j] = self.phe[i][j] * self.rout + self.add[i][j]
